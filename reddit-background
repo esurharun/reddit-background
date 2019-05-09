@@ -35,6 +35,8 @@ import subprocess
 import sys
 import urllib2
 import urlparse
+ 
+
 
 # since PIL is not in the standard library, using a try so it isn't necessary for the script
 try:
@@ -48,6 +50,7 @@ __version__ = '2.1beta'
 # Defaults
 DEFAULT_SUBREDDIT_TOKENS = ['{seasonal}']
 DEFAULT_CONFIG_PATH = u"~/.reddit-background.conf"
+DEFAULT_CACHE_PATH = u"~/.reddit-background.cache"
 DEFAULT_DOWNLOAD_DIRECTORY = u"~/Reddit Backgrounds"
 DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"
 DEFAULT_IMAGE_CHOOSER = 'bestmatch'
@@ -191,25 +194,34 @@ class LinuxHandler(OSHandler):
             warn(u"unable to set background to '{}'".format(path))
 
     def get_desktop_resolutions(self):
-        # source: http://stackoverflow.com/questions/8705814/get-display-count-and-
-        # resolution-for-each-display-in-python-without-xrandr
-        import Xlib.display
-        import Xlib.ext.randr
-        d = Xlib.display.Display()
-        s = d.screen()
-        window = s.root.create_window(0, 0, 1, 1, 1, s.root_depth)
-        res = Xlib.ext.randr.get_screen_resources(window)
         modes = []
         matches = []
-        for output in res.outputs:
-            # use largest resolution per output
-            available_modes = Xlib.ext.randr.get_output_info(window, output, 0).modes
-            if len(available_modes) > 0:
-                modes.append(available_modes[0])
+        cache_path = os.path.expanduser(DEFAULT_CACHE_PATH)
+        try:
+            # source: http://stackoverflow.com/questions/8705814/get-display-count-and-
+            # resolution-for-each-display-in-python-without-xrandr
+            import Xlib.display
+            import Xlib.ext.randr
+            d = Xlib.display.Display()
+            s = d.screen()
+            window = s.root.create_window(0, 0, 1, 1, 1, s.root_depth)
+            res = Xlib.ext.randr.get_screen_resources(window)
+            
+            for output in res.outputs:
+                # use largest resolution per output
+                available_modes = Xlib.ext.randr.get_output_info(window, output, 0).modes
+                if len(available_modes) > 0:
+                    modes.append(available_modes[0])
 
-        for mode in res.modes:
-            if mode.id in modes:
-                matches.append((mode.width, mode.height))
+            for mode in res.modes:
+                if mode.id in modes:
+                    matches.append((mode.width, mode.height))
+
+            with open(cache_path, "w") as text_file:
+                text_file.write(json.dumps(matches))
+        except:
+            matches_file = open(cache_path,"r").read()
+            matches = json.loads(matches_files)
         return matches
 
 
