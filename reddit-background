@@ -798,18 +798,19 @@ class Subreddit(object):
         images = []
         for child in data['data']['children']:
             data = child['data']
-            try:
-                image_data = data['preview']['images'][0]['source']
-            except (KeyError, IndexError):
-                continue
-            else:
-                image = Image(image_data['width'],
-                              image_data['height'],
-                              image_data['url'],
-                              data['title'],
-                              int(data['score']))
-                images.append(image)
-
+            if "{0}".format(data['over_18']) == "False":
+                try:
+                    image_data = data['preview']['images'][0]['source']
+                except (KeyError, IndexError):
+                    continue
+                else:
+                    image = Image(image_data['width'],
+                                  image_data['height'],
+                                  image_data['url'],
+                                  data['title'],
+                                int(data['score']))
+                    images.append(image)
+            
         return images
 
     @classmethod
